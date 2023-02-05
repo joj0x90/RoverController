@@ -2,13 +2,25 @@
 
 import RPi.GPIO as GPIO
 import time
-import keyboard as kb
+import sys
+import tty
+import termios
 
 # setting GPIO-Pins
 M1_l = 2
 M1_r = 3
 M2_l = 4
 M2_r = 17
+
+def _getch():
+    fd = sys.stdin.fileno()
+    old_setting = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_setting)
+    return ch
 
 class robotController:
     def __init__(self):
@@ -31,17 +43,26 @@ class robotController:
         print("turning right...")
 
     def quit(self):
-        print("quit application.")
+        print("quitting application...")
 
 if __name__ == "__main__":
     ctrl = robotController()
     try:
-        while(True):
-            kb.on_press_key('w', ctrl.forward)
-            kb.on_press_key('s', ctrl.backward)
-            kb.on_press_key('a', ctrl.turnLeft)
-            kb.on_press_key('d', ctrl.turnRight)
-            kb.on_press_key('q', ctrl.quit)
+        while True:
+            key = _getch()
+            if key == 'w':
+                ctrl.forward()
+            elif key == 's':
+                ctrl.backward()
+            elif key == 'a':
+                ctrl.turnLeft()
+            elif key == 'd':
+                ctrl.turnRight()
+            elif key == 'q':
+                ctrl.quit()
+                break
+            else:
+                print("unrecognized key event: " + key)
 
     except KeyboardInterrupt:
         print("interrupted by user. terminating Program...")
